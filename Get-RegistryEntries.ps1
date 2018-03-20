@@ -28,21 +28,21 @@ function Get-RegistryEntries {
     param (
         $ComputerName = $env:COMPUTERNAME,
         $SiteName = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName,
-        $WhichAction = 'Both'
+        $WhichAction = 'All'
     )
     write-host "Computer Name: $ComputerName" -ForegroundColor Green
     write-host "Site Name: $SiteName" -ForegroundColor Green
-    write-host "Which Action: $WhichAction`n" -ForegroundColor Green
+    write-host "Action Selected: $WhichAction`n" -ForegroundColor Green
 
 
-    if ($WhichAction -in ('DBBroker', 'Both')) {
+    if ($WhichAction -in ('DBBroker', 'All')) {
         Write-Host "DBbroker Justice Entries..." -ForegroundColor Yellow
         #Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SiteName"
         Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SiteName\Justice"
         
     }
 
-    if ($WhichAction -in ('IMS', 'Both')) {
+    if ($WhichAction -in ('IMS', 'All')) {
         Write-Host "IMS Service Entries..." -ForegroundColor Yellow        
         #Get-ChildItem -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\"
         Get-Itemproperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"        
@@ -51,7 +51,7 @@ function Get-RegistryEntries {
 }
 
 do {
-    $ynquest = Read-Host "Do you want to run all defaults (y)es or (n)o?"
+    $ynquest = Read-Host "Do you want to run all defaults for localhost (Y)es or (N)o?"
 
     if ($ynquest -eq 'y') {
         Get-RegistryEntries
@@ -62,18 +62,30 @@ do {
         $SN = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName
         $SN = Read-Host "What SiteName do you want to retrieve entries from?  (D)efault for $SN"
 
-        if ($CN -eq 'D') {$CN = $env:COMPUTERNAME}
-        if ($SN -eq 'D') {$SN = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName}
-        #$CN
-
         do {
-            $WA = Read-Host "What Action Yo (D)BBroker, (I)MS, or (B)oth"
+            $WA = Read-Host "What Action Yo (D)BBroker, (I)MS, or (A)ll?"
             if ($WA -eq 'D') {$WA = 'DBBroker'}
             elseif ($WA -eq 'I') {$WA = 'IMS'}
-            elseif ($WA -eq 'B') {$WA = 'Both'}
-    
-        } until ($WA -in ('DBBroker', 'IMS', 'Both'))
+            elseif ($WA -eq 'A') {$WA = 'All'}
+            else {Write-Warning "Invalid entry, please enter D, I, or A"}
+        } until ($WA -in ('DBBroker', 'IMS', 'All'))
 
-        Get-RegistryEntries -ComputerName $CN -SiteName $SN -WhichAction $WA
+        if ($CN -eq 'D' -and $SN -eq 'D') {
+            Get-RegistryEntries -WhichAction $WA
+        }
+        elseif ($CN -eq 'D') {
+            Get-RegistryEntries -SiteName $SN -WhichAction $WA
+        }
+        elseif ($SN -eq 'D') {
+            Get-RegistryEntries -ComputerName $CN -WhichAction $WA
+        }
+        #if ($SN -eq 'D') {$SN = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName}
+        else {
+            Get-RegistryEntries -ComputerName $CN -SiteName $SN -WhichAction $WA
+        }
+    }
+    
+    else {
+        Write-Warning "Invalid entry, please enter Y or N"
     }
 } until ($ynquest -in ('y', 'n'))
