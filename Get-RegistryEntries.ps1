@@ -93,7 +93,7 @@ do {
         $CN = Read-Host "What ComputerName do you want to retrieve entries from?  (D)efault for $env:COMPUTERNAME"
 
         #If not the local computer, get the remote computer's default DBBroker entry
-        if ($CN -ne $env:COMPUTERNAME) {
+        if ($CN -ne $env:COMPUTERNAME -and $CN -ne 'd') {
             $SN = Invoke-Command -ComputerName $CN -ScriptBlock {(Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName}
         }
         else {
