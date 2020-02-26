@@ -1,30 +1,22 @@
-<#
-.Synopsis
-Get the registry entries specified.
-
-.Description
-The Get-RegistryEntries function...
-
-.Parameter something
-
-.Example
-Get-RegistryEntries -ComputerName PC1 -SiteName TXPROD -WhichAction All
-
-.Notes
-
-.Link
-#>
-
-clear-host
-#$SiteName = 'CJSUPPORTLAB2'
-#$ComputerName = 'CJSUPPORTAPP3'
-#$WhichAction = 'X'
+Clear-Host
 
 function Get-RegistryEntries {
+    <#
+        .Synopsis
+        Get the registry entries specified.
+        .Description
+        The Get-RegistryEntries function...
+        .Parameter something
+        .Example
+        Get-RegistryEntries -ComputerName PC1 -SiteName TXPROD -WhichAction All
+        .Notes
+        .Link
+    #>
+    
     [CmdletBinding()]
     param (
         $ComputerName = $env:COMPUTERNAME, #default $ComputerName to local PC
-        $SiteName = (Invoke-Command -ComputerName $ComputerName -ScriptBlock {(Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName}), #default $SiteName to entry in DBBroker for local PC
+        $SiteName = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName, #default $SiteName to entry in DBBroker for local PC
         $WhichAction = 'All' #default $WhichAction to 'All'
     )
 
@@ -32,51 +24,27 @@ function Get-RegistryEntries {
     Write-Host "Computer Name: $ComputerName" -ForegroundColor Green
     Write-Host "Site Name: $SiteName" -ForegroundColor Green
     Write-Host "Action Selected: $WhichAction`n" -ForegroundColor Green
+
+    <#*****************Get-ItemProperty 'HKLM:\SOFTWARE\Tyler Technologies\IMS\Console\' DO THIS SON #>
     
     #If WhichAction is DBBroker or All, retrieve DBBroker entries
     if ($WhichAction -in ('DBBroker', 'All')) {
         Write-Host "DBbroker Justice Entries..." -ForegroundColor Yellow
-        Invoke-Command -ComputerName $ComputerName -ScriptBlock {param($SITE)
-            Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SITE\Justice"
-        } -ArgumentList $SiteName
+        Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SiteName\Justice"
     }
-
-    #If WhichAction is IMS or All, retrieve IMS entries
+    #If WhichAction is IMS or All, retrieve DBBroker entries    
     if ($WhichAction -in ('IMS', 'All')) {
         Write-Host "IMS Service Entries..." -ForegroundColor Yellow
-        #Get-Itemproperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"
-        Invoke-Command -ComputerName $ComputerName -ScriptBlock {Get-ItemProperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"}
+        Get-ItemProperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"
+        #HKLM:\SOFTWARE\Tyler Technologies\IMS\Service
+        #HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TylerIMS\Parameters
     }
-    <#
-    if ($ComputerName -ne $env:COMPUTERNAME) {
-        Write-Host 'Invoking Command to Remote Computer' -ForegroundColor Red
-        if ($WhichAction -in ('DBBroker', 'All')) {
-            Write-Host "DBbroker Justice Entries..." -ForegroundColor Yellow
-            Invoke-Command -ComputerName $ComputerName -ScriptBlock {param($SITE)
-                Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SITE\Justice"
-            } -ArgumentList $SiteName
-        }
-        if ($WhichAction -in ('IMS', 'All')) {
-            Write-Host "IMS Service Entries..." -ForegroundColor Yellow
-            #Get-Itemproperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"
-            Invoke-Command -ComputerName $ComputerName -ScriptBlock {Get-ItemProperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"}
-        }
+    #If WhichAction is Email or All, retrieve DBBroker entries    
+    if ($WhichAction -in ('Email', 'All')) {
+        Write-Host "Job Processing E-mail Entries..." -ForegroundColor Yellow
+        Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\Job Processing\Tasks\TYLTaskNotifyEmail\$SiteName"
     }
-
-    else {
-        if ($WhichAction -in ('DBBroker', 'All')) {
-            Write-Host "DBbroker Justice Entries..." -ForegroundColor Yellow
-            #Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SiteName"
-            Get-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\$SiteName\Justice"
-        }
-        if ($WhichAction -in ('IMS', 'All')) {
-            Write-Host "IMS Service Entries..." -ForegroundColor Yellow
-            #Get-ChildItem -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\"
-            Get-Itemproperty -Path "HKLM:\SOFTWARE\Tyler Technologies\IMS\Service"
-        }
-    }
-    #>
-} #end function
+}#end function
 
 
 do {
@@ -90,27 +58,33 @@ do {
     #If no is selected, get information from user
     elseif ($ynquest -eq 'n') {
         #Get $CN value from user for ComputerName
-        $CN = Read-Host "What ComputerName do you want to retrieve entries from?  (D)efault for $env:COMPUTERNAME"
+        $CN = (Read-Host "What ComputerName(s by comma) do you want to retrieve entries from?  (D)efault for $env:COMPUTERNAME").split(',') | ForEach-Object {$_.trim()}
 
         #If not the local computer, get the remote computer's default DBBroker entry
         if ($CN -ne $env:COMPUTERNAME -and $CN -ne 'd') {
-            $SN = Invoke-Command -ComputerName $CN -ScriptBlock {(Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName}
+            $SN = @()
+            foreach ($name in $CN) {
+                $SN += (Invoke-Command -ComputerName $name -ScriptBlock {(Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName})
+            }
         }
+
         else {
+            #Else use localhost's default DBBroker entry
             $SN = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName
         }
 
-        #Get $SN value from user for SiteName   
+        #Get $SN value from user for SiteName
         $SN = Read-Host "What SiteName do you want to retrieve entries from?  (D)efault for $SN"
 
         #Get $WA value from user for WhichAction
         do {
-            $WA = Read-Host "What Action do you want to execute: (D)BBroker, (I)MS, or (A)ll?"
+            $WA = Read-Host "What Action do you want to execute: (D)BBroker, (I)MS, (E)mail or (A)ll?"
             if ($WA -eq 'D') {$WA = 'DBBroker'}
             elseif ($WA -eq 'I') {$WA = 'IMS'}
+            elseif ($WA -eq 'E') {$WA = 'Email'}
             elseif ($WA -eq 'A') {$WA = 'All'}
-            else {Write-Warning "Invalid entry, please enter D, I, or A"}
-        } until ($WA -in ('DBBroker', 'IMS', 'All'))
+            else {Write-Warning "Invalid entry, please enter D, I, E, or A"}
+        } until ($WA -in ('DBBroker', 'IMS', 'Email', 'All'))
 
         #If all defaults, call function and pass WhichAction
         if ($CN -eq 'D' -and $SN -eq 'D') {
@@ -120,9 +94,10 @@ do {
         elseif ($CN -eq 'D') {
             Get-RegistryEntries -SiteName $SN -WhichAction $WA
         }
-        #If SiteName is default, pass ComputerName and WhichAction to function        
+        #If SiteName is default, pass ComputerName and WhichAction to function
         elseif ($SN -eq 'D') {
-            Get-RegistryEntries -ComputerName $CN -WhichAction $WA
+            Invoke-Command -ComputerName $CN -ScriptBlock ${Function:Get-RegistryEntries}
+            #Get-RegistryEntries -ComputerName $CN -WhichAction $WA
         }
         #If no defaults, pass all values to function
         else {
@@ -135,3 +110,5 @@ do {
         Write-Warning "Invalid entry, please enter Y or N"
     }
 } until ($ynquest -in ('y', 'n'))
+
+#Invoke-Command -ComputerName CJSUPPORTAPP3, CJSUPPORTJOB3 -ScriptBlock ${Function:Get-RegistryEntries}
