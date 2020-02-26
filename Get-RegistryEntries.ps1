@@ -111,4 +111,7 @@ do {
     }
 } until ($ynquest -in ('y', 'n'))
 
+Write-Host "Press [ENTER] to exit..."
+$x = Read-Host
+
 #Invoke-Command -ComputerName CJSUPPORTAPP3, CJSUPPORTJOB3 -ScriptBlock ${Function:Get-RegistryEntries}
