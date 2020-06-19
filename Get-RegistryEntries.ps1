@@ -13,9 +13,9 @@ function Get-RegistryEntries {
     
     [CmdletBinding()]
     param (
+        $WhichAction = 'All', #default $WhichAction to 'All'
         $ComputerName = $env:COMPUTERNAME, #default $ComputerName to local PC
-        $SiteName = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName, #default $SiteName to entry in DBBroker for local PC
-        $WhichAction = 'All' #default $WhichAction to 'All'
+        $SiteName = (Get-ChildItem -Path "HKLM:\SOFTWARE\Wow6432Node\The Software Group\Meridian\DBBroker\").PSChildName #default $SiteName to entry in DBBroker for local PC
     )
 
     #Display information to user as to what ComputerName, SiteName, and Action is being run
@@ -94,7 +94,7 @@ do {
         }
         #If SiteName is default, pass ComputerName and WhichAction to function
         elseif ($SN -eq 'D') {
-            Invoke-Command -ComputerName $CN -ScriptBlock ${Function:Get-RegistryEntries}
+            Invoke-Command -ComputerName $CN -ScriptBlock ${Function:Get-RegistryEntries} -ArgumentList ($WA)
             #Get-RegistryEntries -ComputerName $CN -WhichAction $WA
         }
         #If no defaults, pass all values to function
