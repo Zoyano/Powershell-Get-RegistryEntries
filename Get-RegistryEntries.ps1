@@ -9,8 +9,6 @@ function Get-RegistryEntries {
         .Parameter something
         .Example
         Get-RegistryEntries -ComputerName PC1 -SiteName TXPROD -WhichAction All
-        .Notes
-        .Link
     #>
     
     [CmdletBinding()]
