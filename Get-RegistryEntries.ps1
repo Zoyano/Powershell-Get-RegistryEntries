@@ -96,8 +96,8 @@ do {
         }
         #If SiteName is default, pass ComputerName and WhichAction to function
         elseif ($SN -eq 'D') {
-            Invoke-Command -ComputerName $CN -ScriptBlock ${Function:Get-RegistryEntries}
-            #Get-RegistryEntries -ComputerName $CN -WhichAction $WA
+            Get-RegistryEntries -ComputerName $CN -WhichAction $WA
+            #Invoke-Command -ComputerName $CN -ScriptBlock ${Function:Get-RegistryEntries}
         }
         #If no defaults, pass all values to function
         else {
